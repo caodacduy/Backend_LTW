@@ -1,0 +1,62 @@
+const { where } = require('sequelize');
+const db=require('../models/index');
+const GroupMember=db.GroupMember
+const User= db.User
+
+exports.joinGroup= async(req,res)=>{
+    const {groupId}=req.body
+    const userId = req.user.id;
+
+
+    try{
+        const existed = await GroupMember.findOne({where: { group_id: groupId, user_id: userId }})
+        if (existed) {
+            return res.status(400).json({message: 'Ban da gui yeu cau hoac la thanh vien trong nhom'})
+        }
+
+        await GroupMember.create({
+            group_id: groupId,
+            user_id: userId,
+        })
+        res.json({ message: 'Yêu cầu tham gia nhóm đã được gửi.' });
+    } catch(error){
+        res.status(500).json({error:"loi server"})
+    }
+
+}
+
+exports.getPendingMembers= async (req,res)=>{
+    const {groupId} = req.params;
+    console.log(groupId)
+    try {
+        const members = await GroupMember.findAll({
+            where:{group_id: groupId, status: 'pending'},
+            include: [{ model: User, as: 'user', attributes: [ 'name','email'] }]
+        })
+        res.json(members);
+    } catch (error) {
+        res.status(500).json({ error: error });
+    }
+}
+exports.updateStatus = async (req, res) => {
+  const { groupId } = req.params;
+  const { status,userId } = req.body;
+
+  if (!['accepted', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+  }
+
+  try {
+    const member = await GroupMember.findOne({ where: { group_id: groupId, user_id: userId } });
+
+    if (!member) return res.status(404).json({ error: 'Không tìm thấy thành viên' });
+
+    member.status = status;
+    
+    await member.save();
+
+    res.json({ message: `Đã cập nhật trạng thái thành công`, member });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+};
