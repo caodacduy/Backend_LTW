@@ -7,7 +7,6 @@ exports.joinGroup= async(req,res)=>{
     const {groupId}=req.body
     const userId = req.user.id;
 
-
     try{
         const existed = await GroupMember.findOne({where: { group_id: groupId, user_id: userId }})
         if (existed) {

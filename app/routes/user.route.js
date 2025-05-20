@@ -1,7 +1,7 @@
 const express=require("express")
 const router=express.Router();
 const userController=require("../controllers/user.controller");
-const { checkPermission } = require("../middlewares/checkPermission");
+const { checkPermission } = require("../middlewares/check.middleware");
 
 router.get('/',userController.getAllUsers)
 router.get('/:id',checkPermission,userController.getUserById)

@@ -2,22 +2,20 @@
 require('dotenv').config();
 const express = require('express');
 const app = express();
-const authRoutes = require('./app/routes/auth.route')
-const userRoutes=require('./app/routes/user.route')
-const groupRoutes=require('./app/routes/group.route')
-const groupMemberRoutes=require('./app/routes/group_member.route')
-
+const routes =require('./app/routes/routes')
+const cors = require('cors');
 require('./app/models/index')
+
+// const swaggerUi = require('swagger-ui-express');
+// const swaggerJsdoc = require('swagger-jsdoc');
 //const
 const PORT=process.env.PORT
 
-
+app.use(cors());
 //use
 app.use(express.json())
-app.use('/api/auth',authRoutes)
-app.use('/api/users',userRoutes)
-app.use('/api/groups',groupRoutes)
-app.use('/api/group_member',groupMemberRoutes)
+app.use('/',routes)
+
 
 
 app.get('/', (req, res) => {

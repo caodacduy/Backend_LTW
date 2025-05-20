@@ -30,6 +30,7 @@ db.sequelize = sequelize;
 db.User = require('./user.model')(sequelize, Sequelize);
 db.Group= require('./groups.model')(sequelize, Sequelize);
 db.GroupMember = require('./group_members.model')(sequelize,Sequelize)
+db.Post= require('./posts.model')(sequelize,Sequelize)
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
     db[modelName].associate(db);

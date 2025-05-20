@@ -1,10 +1,10 @@
 const express=require("express")
 const router=express.Router();
 const groupController=require("../controllers/group.controller");
-const authenticateToken = require("../middlewares/auth.middleware");
+const checkRole=require('../middlewares/check.middleware')
 
 
-router.post('/',authenticateToken,groupController.createGroups)
+router.post('/',checkRole.checkLecturer,groupController.createGroups)
 
 
 module.exports=router
