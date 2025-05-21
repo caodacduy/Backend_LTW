@@ -1,3 +1,5 @@
+
+const { where } = require('sequelize');
 const db=require('../models/index');
 const Post= db.Post;
 
@@ -8,7 +10,7 @@ exports.createPost =async(req,res)=>{
     if (!title || !content) {
         throw new Error('Thiếu dữ liệu bắt buộc');
       }
-    
+
     const newPost = await Post.create({
         title,
         content,
@@ -93,5 +95,61 @@ exports.getPostInGroup = async(req,res)=>{
     });
     }
 }
+
+exports.getPostById = async (req, res) => {
+  try {
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    const allPosts = await Post.findAll({
+      where: {
+        user_id: user_id
+      }
+    });
+
+    console.log('user_id:', user_id);
+    console.log('allPosts:', allPosts);
+
+    res.status(200).json({
+      status: 'success',
+      data: allPosts,
+      userid: user_id
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Đã xảy ra lỗi khi lấy bài viết'
+    });
+  }
+};
+
+exports.updatePost = async(req,res)=>{
+    try {
+        const {title,content}=req.body
+        const {id}=req.params
+        console.log(id)
+        const newPost =await Post.update({
+            title:title,
+            content:content
+        },
+    {
+        where :{id:id}
+    })
+    res.status(200).json({
+            status: 'success',
+        })
+    } catch (error) {
+        return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Đã xảy ra lỗi khi sua bai viet'
+    });
+    }
+
+
+}
+
 
 

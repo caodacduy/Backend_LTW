@@ -3,6 +3,7 @@ const Group=db.Group;
 
 exports.createGroups= async(req,res)=>{
     const owner = req.user.id
+    
     try {
         const {name,description}=req.body;
         if (!name || !description ) {
