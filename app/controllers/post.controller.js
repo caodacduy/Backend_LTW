@@ -7,7 +7,7 @@ exports.createPost =async(req,res)=>{
     try {
         const userId = req.user.id;
         const { title, content } = req.body;
-    if (!title || !content) {
+    if (!title ) {
         throw new Error('Thiếu dữ liệu bắt buộc');
       }
 
@@ -34,7 +34,7 @@ exports.createPostInGroup =async(req,res)=>{
         console.log(group_id)
         const userId = req.user.id;
         const { title, content } = req.body;
-    if (!title || !content || !group_id) {
+    if (!title || !group_id) {
         throw new Error('Thiếu dữ liệu bắt buộc');
       }
     
@@ -126,30 +126,51 @@ exports.getPostById = async (req, res) => {
   }
 };
 
-exports.updatePost = async(req,res)=>{
-    try {
-        const {title,content}=req.body
-        const {id}=req.params
-        console.log(id)
-        const newPost =await Post.update({
-            title:title,
-            content:content
-        },
-    {
-        where :{id:id}
-    })
-    res.status(200).json({
-            status: 'success',
-        })
-    } catch (error) {
-        return res.status(500).json({
-      status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi sua bai viet'
-    });
+exports.updatePost = async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    const { id } = req.params;
+
+    // Kiểm tra nếu không có id
+    if (!id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Thiếu ID bài viết cần cập nhật',
+      });
     }
 
+    // Kiểm tra bài viết có tồn tại không
+    const post = await Post.findByPk(id);
+    if (!post) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Bài viết không tồn tại',
+      });
+    }
 
-}
+    // Tiến hành cập nhật
+    await Post.update(
+      {
+        title: title,
+        content: content,
+      },
+      {
+        where: { id: id },
+      }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Cập nhật bài viết thành công',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Đã xảy ra lỗi khi sửa bài viết',
+    });
+  }
+};
+
 
 
 
