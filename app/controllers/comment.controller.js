@@ -84,7 +84,7 @@ exports.deleteComment = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deleted = await db.Comment.destroy({ where: { id } });
+    const deleted = await Comment.destroy({ where: { id } });
     if (!deleted) {
       return res.status(404).json({ message: 'Comment not found' });
     }
