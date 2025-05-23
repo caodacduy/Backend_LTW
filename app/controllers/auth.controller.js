@@ -23,6 +23,7 @@ exports.login = async (req, res) => {
     // Tạo token
     const token = generateToken({
       id: user.id,
+      name: user.name,
       email: user.email,
       role: user.role,
     });
