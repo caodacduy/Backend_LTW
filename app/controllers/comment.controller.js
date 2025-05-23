@@ -16,7 +16,7 @@ exports.createComment = async (req, res) => {
 
     const comment_parent = await Comment.findByPk(parent_id);
     console.log(comment_parent)
-    if (!comment_parent) {
+    if (!comment_parent && parent_id) {
       return res.status(400).json({
         status:"error",
         message:"Khong tra loi duoc coment"
