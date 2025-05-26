@@ -1,6 +1,7 @@
 
 const db=require('../models/index');
 const User =db.User;
+const Group = db.Group
 
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret-key';
@@ -78,6 +79,38 @@ exports.checkLecturer= async(req,res,next)=>{
         })
     }
 }
+
+
+exports.verifyGroupOwner = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const id = req.params.groupId;
+
+    const group = await Group.findByPk(id);
+    console.log(group)
+    if (!group) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Không tìm thấy nhóm'
+      });
+    }
+    console.log(group.owner_id)
+    if (group.owner_id !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Bạn không có quyền quản lý nhóm này'
+      });
+    }
+
+    next(); // Cho phép tiếp tục
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: error.message||'Lỗi xác minh quyền sở hữu nhóm'
+    });
+  }
+};
+
 
 
 // module.exports={checkPermission}

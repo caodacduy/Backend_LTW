@@ -1,4 +1,4 @@
-const { where } = require('sequelize');
+
 const db=require('../models/index');
 const GroupMember=db.GroupMember
 const User= db.User
@@ -23,7 +23,6 @@ exports.joinGroup= async(req,res)=>{
     }
 
 }
-
 exports.getPendingMembers= async (req,res)=>{
     const {groupId} = req.params;
     console.log(groupId)
@@ -36,6 +35,40 @@ exports.getPendingMembers= async (req,res)=>{
     } catch (error) {
         res.status(500).json({ error: error });
     }
+}
+exports.getMembersAccepted= async (req,res)=>{
+    const {groupId} = req.params;
+    console.log(groupId)
+    try {
+        const members = await GroupMember.findAll({
+            where:{group_id: groupId, status: 'accepted'},
+            include: [{ model: User, as: 'user', attributes: [ 'name','email'] }]
+        })
+        res.json(members);
+    } catch (error) {
+        res.status(500).json({ error: error });
+    }
+}
+exports.deleteMemberOrRejected = async(req,res)=>{
+
+  try {
+    const id = req.params.id;
+    const deleted = await GroupMember.destroy({ where: { user_id:id } });
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Không tìm thấy Group để xóa' });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Xóa group thành công'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Đã xảy ra lỗi khi xóa Group'
+    });
+  }
 }
 exports.updateStatus = async (req, res) => {
   const { groupId } = req.params;
