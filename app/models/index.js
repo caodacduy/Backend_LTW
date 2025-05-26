@@ -9,7 +9,10 @@ const sequelize = new Sequelize(
     host: dbConfig.HOST,
     dialect: dbConfig.dialect,
     pool: dbConfig.pool,
-    logging: false // Tắt log SQL
+    logging: false, // Tắt log SQL,
+    define: {
+      timestamps: false  // Tắt timestamps global, model nào cần bật thì bật riêng
+    }
   }
 );
 
@@ -32,6 +35,10 @@ db.Group= require('./groups.model')(sequelize, Sequelize);
 db.GroupMember = require('./group_members.model')(sequelize,Sequelize)
 db.Post= require('./posts.model')(sequelize,Sequelize)
 db.Comment = require('./comment.model')(sequelize, Sequelize)
+db.Tag = require('./tag.model')(sequelize, Sequelize)
+db.PostTag = require('./post_tag.model')(sequelize, Sequelize)
+
+
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {

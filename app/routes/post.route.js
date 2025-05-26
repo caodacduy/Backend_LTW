@@ -68,6 +68,9 @@ module.exports = router
  *                 type: string
  *               content:
  *                 type: string
+ *               tags:
+ *                 type: array
+ *                
  *     responses:
  *       201:
  *         description: Tạo bài viết thành công

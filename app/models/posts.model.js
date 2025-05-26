@@ -41,6 +41,13 @@ module.exports = (sequelize, DataTypes) => {
   Post.associate = (models) => {
   Post.belongsTo(models.User, { foreignKey: 'user_id' });
   Post.belongsTo(models.Group, { foreignKey: 'group_id' });
+  Post.belongsToMany(models.Tag, {
+  through: 'post_tags',
+  foreignKey: 'post_id',
+  otherKey: 'tag_id',
+  onDelete: 'CASCADE'
+});
+
 };
   return Post;
 };

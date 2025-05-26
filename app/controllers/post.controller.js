@@ -3,30 +3,84 @@ const { where } = require('sequelize');
 const db=require('../models/index');
 const Post= db.Post;
 
-exports.createPost =async(req,res)=>{
-    try {
-        const userId = req.user.id;
-        const { title, content } = req.body;
-    if (!title ) {
-        throw new Error('Thiếu dữ liệu bắt buộc');
+// exports.createPost =async(req,res)=>{
+//     try {
+//         const userId = req.user.id;
+//         const { title, content } = req.body;
+//     if (!title ) {
+//         throw new Error('Thiếu dữ liệu bắt buộc');
+//       }
+
+//     const newPost = await Post.create({
+//         title,
+//         content,
+//         user_id:userId
+//     })
+//     return res.status(201).json({
+//       status: 'success',
+//       data: newPost
+//     });
+//     } catch (error) {
+//         return res.status(500).json({
+//       status: 'error',
+//       message: error.message || 'Đã xảy ra lỗi khi tạo bai viet'
+//     });
+//     }
+// }
+
+
+const Tag = db.Tag;
+
+exports.createPost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { title, content, tags } = req.body; // tags là mảng tên tag
+
+    if (!title) {
+      throw new Error('Thiếu dữ liệu bắt buộc');
+    }
+
+    // 1. Tạo bài viết mới
+    const newPost = await Post.create({
+      title,
+      content,
+      user_id: userId
+    });
+
+    // 2. Nếu có tags, tạo hoặc lấy tag, sau đó gán cho bài viết
+    if (Array.isArray(tags) && tags.length > 0) {
+      const tagInstances = [];
+      for (const tagName of tags) {
+        const [tag] = await Tag.findOrCreate({
+          where: { name: tagName.trim() }
+        });
+        tagInstances.push(tag);
       }
 
-    const newPost = await Post.create({
-        title,
-        content,
-        user_id:userId
-    })
+      await newPost.addTags(tagInstances);
+    }
+
+    // 3. Lấy lại bài viết kèm tag để trả về
+    const postWithTags = await Post.findByPk(newPost.id, {
+      include: [{
+        model: Tag,
+        through: { attributes: [] }
+      }]
+    });
+
     return res.status(201).json({
       status: 'success',
-      data: newPost
+      data: postWithTags
     });
-    } catch (error) {
-        return res.status(500).json({
+
+  } catch (error) {
+    return res.status(500).json({
       status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi tạo bai viet'
+      message: error.message || 'Đã xảy ra lỗi khi tạo bài viết'
     });
-    }
-}
+  }
+};
+
 
 exports.createPostInGroup =async(req,res)=>{
     try {
