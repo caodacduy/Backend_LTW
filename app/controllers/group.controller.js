@@ -42,28 +42,24 @@ exports.getGroups = async (req , res )=>{
   }
 }
 
-exports.getGroupsWithLecture = async (req , res)=>{
-  const owner = req.user.id
-  console.log(owner)
+exports.getGroupsWithLecture = async (req , res) => {
+  const owner = req.user.id; // ✅ lấy từ token
   try {
     const allGroup = await Group.findAll({
-  where: {
-    owner_id: 44
-  }
-});
-    // console.log(allGroup)
+      where: { owner_id: owner }
+    });
 
     return res.status(200).json({
-      status:"success",
-      data:allGroup
-    })
+      status: "success",
+      data: allGroup
+    });
   } catch (error) {
     return res.status(400).json({
-      status:"success",
-      error:error
-    })
+      status: "error", // ✅ sửa luôn "status" nếu có lỗi
+      message: error.message || "Lỗi khi lấy nhóm của giảng viên"
+    });
   }
-}
+};
 
 exports.deleteGroup = async(req,res)=>{
 
