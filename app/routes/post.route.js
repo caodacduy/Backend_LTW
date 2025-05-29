@@ -3,13 +3,16 @@ const express=require("express")
 const router=express.Router();
 const postController= require('../controllers/post.controller')
 const uploadImgController=require('../controllers/upload_img.controller')
-
+const upload = require('../middlewares/upload');
 router.post(
   '/upload-image',
   uploadImgController.upload.single('upload'), // phải đúng 'upload'
   uploadImgController.uploadImg
 );
-router.post('/',authenticateToken,postController.createPost)
+router.post('/',authenticateToken, upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'file', maxCount: 1 }
+  ]),postController.createPost)
 router.post('/:group_id',authenticateToken,postController.createPostInGroup)
 router.get('/public',authenticateToken,postController.getPost)
 router.get('/my_post',authenticateToken,postController.getPostById)

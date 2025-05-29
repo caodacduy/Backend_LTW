@@ -1,53 +1,34 @@
 
-const { where } = require('sequelize');
 const db=require('../models/index');
 const Post= db.Post;
-
-// exports.createPost =async(req,res)=>{
-//     try {
-//         const userId = req.user.id;
-//         const { title, content } = req.body;
-//     if (!title ) {
-//         throw new Error('Thiếu dữ liệu bắt buộc');
-//       }
-
-//     const newPost = await Post.create({
-//         title,
-//         content,
-//         user_id:userId
-//     })
-//     return res.status(201).json({
-//       status: 'success',
-//       data: newPost
-//     });
-//     } catch (error) {
-//         return res.status(500).json({
-//       status: 'error',
-//       message: error.message || 'Đã xảy ra lỗi khi tạo bai viet'
-//     });
-//     }
-// }
-
-
 const Tag = db.Tag;
 
 exports.createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { title, content, tags } = req.body; // tags là mảng tên tag
+    const { title, content, tags } = req.body;
 
     if (!title) {
       throw new Error('Thiếu dữ liệu bắt buộc');
     }
 
+    // Lấy file từ req.files
+    const image = req.files['image'] ? req.files['image'][0] : null;
+    const file = req.files['file'] ? req.files['file'][0] : null;
+
+    const imageUrl = image ? `/uploads/image/${image.filename}` : null;
+    const fileUrl = file ? `/uploads/file/${file.filename}` : null;
+
     // 1. Tạo bài viết mới
     const newPost = await Post.create({
       title,
       content,
-      user_id: userId
+      user_id: userId,
+      image_url: imageUrl,
+      file_url: fileUrl
     });
 
-    // 2. Nếu có tags, tạo hoặc lấy tag, sau đó gán cho bài viết
+    // 2. Gắn tag nếu có
     if (Array.isArray(tags) && tags.length > 0) {
       const tagInstances = [];
       for (const tagName of tags) {
@@ -56,11 +37,10 @@ exports.createPost = async (req, res) => {
         });
         tagInstances.push(tag);
       }
-
       await newPost.addTags(tagInstances);
     }
 
-    // 3. Lấy lại bài viết kèm tag để trả về
+    // 3. Trả về bài viết có tag
     const postWithTags = await Post.findByPk(newPost.id, {
       include: [{
         model: Tag,
@@ -80,7 +60,6 @@ exports.createPost = async (req, res) => {
     });
   }
 };
-
 
 exports.createPostInGroup =async(req,res)=>{
     try {

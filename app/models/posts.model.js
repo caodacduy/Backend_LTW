@@ -30,6 +30,14 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: false
     },
+  image_url: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  file_url: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
