@@ -48,7 +48,7 @@ exports.getGroupsWithLecture = async (req , res)=>{
   try {
     const allGroup = await Group.findAll({
   where: {
-    owner_id: 44
+    owner_id: owner
   }
 });
     // console.log(allGroup)

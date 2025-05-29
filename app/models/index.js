@@ -32,11 +32,12 @@ db.sequelize = sequelize;
 
 db.User = require('./user.model')(sequelize, Sequelize);
 db.Group= require('./groups.model')(sequelize, Sequelize);
-db.GroupMember = require('./group_members.model')(sequelize,Sequelize)
-db.Post= require('./posts.model')(sequelize,Sequelize)
-db.Comment = require('./comment.model')(sequelize, Sequelize)
-db.Tag = require('./tag.model')(sequelize, Sequelize)
-db.PostTag = require('./post_tag.model')(sequelize, Sequelize)
+db.GroupMember = require('./group_members.model')(sequelize,Sequelize);
+db.Post= require('./posts.model')(sequelize,Sequelize);
+db.Comment = require('./comment.model')(sequelize, Sequelize);
+db.Tag = require('./tag.model')(sequelize, Sequelize);
+db.PostTag = require('./post_tag.model')(sequelize, Sequelize);
+db.Vote = require('./vote.model')(sequelize,Sequelize);
 
 
 
