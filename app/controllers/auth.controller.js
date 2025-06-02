@@ -78,7 +78,7 @@ exports.getProfile = async (req,res)=>{
     const userId = req.user.id
     // console.log(userId)
     const user = await User.findByPk(userId, {
-      attributes: [ 'email', 'name', 'role'] // Chỉ lấy các trường cần thiết
+      attributes: [ 'id','email', 'name', 'role'] // Chỉ lấy các trường cần thiết
     });
 
     if (!user) {

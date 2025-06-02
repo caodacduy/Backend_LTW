@@ -49,27 +49,32 @@ exports.getMembersAccepted= async (req,res)=>{
         res.status(500).json({ error: error });
     }
 }
-exports.deleteMemberOrRejected = async(req,res)=>{
-
+exports.deleteMemberOrRejected = async (req, res) => {
   try {
-    const id = req.params.id;
-    const deleted = await GroupMember.destroy({ where: { user_id:id } });
+    const { groupId, userId } = req.params;
+
+    const deleted = await GroupMember.destroy({
+      where: {
+        group_id: groupId,
+        user_id: userId
+      }
+    });
 
     if (!deleted) {
-      return res.status(404).json({ message: 'Không tìm thấy Group để xóa' });
+      return res.status(404).json({ message: 'Không tìm thấy thành viên để xoá' });
     }
 
     return res.status(200).json({
       status: 'success',
-      message: 'Xóa group thành công'
+      message: 'Xoá thành viên thành công'
     });
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi xóa Group'
+      message: error.message || 'Đã xảy ra lỗi khi xoá thành viên'
     });
   }
-}
+};
 exports.updateStatus = async (req, res) => {
   const { groupId } = req.params;
   const { status,userId } = req.body;
