@@ -7,6 +7,7 @@ const authenticateToken = require('../middlewares/auth.middleware')
 
 router.post('/',checkRole.checkLecturer,groupController.createGroups)
 router.get('/',authenticateToken,groupController.getGroups)
+router.get('/:id', groupController.getGroupById);
 router.get('/lecture', checkRole.checkLecturer, groupController.getGroupsWithLecture)
 router.delete('/:id',checkRole.checkLecturer,groupController.deleteGroup )
 router.put('/:id',checkRole.checkLecturer,groupController.updateGroup)

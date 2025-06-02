@@ -30,20 +30,20 @@ module.exports = (sequelize, DataTypes) => {
 
   // Associations
   Group.associate = (models) => {
-    // Group thuộc về 1 User (owner)
-    Group.belongsTo(models.User, { foreignKey: 'owner_id', as: 'owner' });
+  // Group thuộc về 1 User (owner)
+  Group.belongsTo(models.User, { foreignKey: 'owner_id', as: 'owner' });
 
-    // Group có nhiều bài Post
-    // Group.hasMany(models.Post, { foreignKey: 'group_id', as: 'posts' });
+  // Group có nhiều User qua bảng trung gian group_members
+  Group.belongsToMany(models.User, {
+    through: models.GroupMember,
+    foreignKey: 'group_id',
+    otherKey: 'user_id',
+    as: 'members'
+  });
 
-    // Group có nhiều User qua bảng trung gian group_members
-    Group.belongsToMany(models.User, {
-      through: models.GroupMember,
-      foreignKey: 'group_id',
-      otherKey: 'user_id',
-      as: 'members'
-    });
-  };
+  // Thêm association này để Group biết có nhiều GroupMember
+  Group.hasMany(models.GroupMember, { foreignKey: 'group_id', as: 'GroupMembers' });
+};
 
   return Group;
 };

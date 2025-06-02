@@ -1,5 +1,6 @@
 const db=require('../models/index');
 const Group=db.Group;
+const GroupMember = db.GroupMember;
 
 exports.createGroups= async(req,res)=>{
     const owner = req.user.id
@@ -25,22 +26,85 @@ exports.createGroups= async(req,res)=>{
     }
 }
 
-exports.getGroups = async (req , res )=>{
+exports.getGroups = async (req, res) => {
+  const userId = req.user.id;
+
   try {
-    const allGroup = await Group.findAll()
-    console.log(allGroup)
+    const groups = await Group.findAll({
+      include: [
+        {
+          model: GroupMember,
+          as: 'GroupMembers',
+          where: { user_id: userId },
+          required: false,
+          attributes: ['status']
+        }
+      ]
+    });
+
+    const formatted = groups.map(group => ({
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      owner_id: group.owner_id,
+      status: group.GroupMembers[0]?.status || null
+      // status sẽ là: 'pending', 'accepted' hoặc null (nếu chưa tham gia)
+    }));
 
     return res.status(200).json({
-      status:"success",
-      data:allGroup
-    })
+      status: "success",
+      data: formatted
+    });
   } catch (error) {
     return res.status(400).json({
-      status:"success",
-      error:error
-    })
+      status: "fail",
+      error: error.message
+    });
   }
-}
+};
+
+exports.getGroupById = async (req, res) => {
+  const groupId = req.params.id;
+
+  try {
+    const group = await Group.findByPk(groupId, {
+      include: [
+        {
+          model: db.User,
+          as: 'owner',
+          attributes: ['id', 'name', 'email']
+        },
+        {
+          model: GroupMember,
+          as: 'GroupMembers',
+          where: { status: 'accepted' },
+          required: false, // để nếu chưa có thành viên vẫn không lỗi
+          attributes: ['user_id']
+        }
+      ]
+    });
+
+    if (!group) {
+      return res.status(404).json({ message: 'Không tìm thấy nhóm' });
+    }
+
+    return res.status(200).json({
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      created_at: group.created_at,
+      owner: group.owner, // { id, name, email }
+      member_count: group.GroupMembers.length
+    });
+
+  } catch (error) {
+    console.error('Lỗi khi lấy group theo ID:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Lỗi server khi lấy chi tiết nhóm'
+    });
+  }
+};
 
 exports.getGroupsWithLecture = async (req , res) => {
   const owner = req.user.id; // ✅ lấy từ token
