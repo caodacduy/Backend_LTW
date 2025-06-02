@@ -228,3 +228,37 @@ exports.updatePost = async (req, res) => {
   }
 };
 
+// Lấy các bài viết theo tag_id (có thể là 1 hoặc nhiều tag)
+exports.getPostsByTag = async (req, res) => {
+  const { tag_id } = req.params; // ví dụ: ?tag_id=13 hoặc ?tag_id=13,14
+
+  try {
+    if (!tag_id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Thiếu tag_id để lọc bài viết'
+      });
+    }
+
+    const tagIds = tag_id.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+
+    const posts = await Post.findAll({
+      include: [
+        {
+          model: Tag,
+          where: { id: tagIds },
+          through: { attributes: [] }
+        }
+      ],
+      distinct: true
+    });
+
+    res.status(200).json({ status: 'success', data: posts });
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Đã xảy ra lỗi khi lấy bài viết theo tag'
+    });
+  }
+};
+

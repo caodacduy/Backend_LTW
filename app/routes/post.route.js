@@ -4,6 +4,7 @@ const router = express.Router();
 const postController = require('../controllers/post.controller');
 const uploadImgController = require('../controllers/upload_img.controller');
 const upload = require('../middlewares/upload');
+const {verifyMembership} = require('../middlewares/member.middleware')
 
 // Upload ảnh CKEditor
 router.post(
@@ -26,7 +27,7 @@ router.post(
 // Tạo bài viết trong nhóm
 router.post(
   '/:group_id',
-  authenticateToken,
+  authenticateToken,verifyMembership,
   upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'file', maxCount: 1 }
@@ -41,7 +42,7 @@ router.get('/public', authenticateToken, postController.getPost);
 router.get('/my_post', authenticateToken, postController.getPostById);
 
 // Lấy bài viết trong một nhóm
-router.get('/:group_id', authenticateToken, postController.getPostInGroup);
+router.get('/in_group/:group_id', authenticateToken, postController.getPostInGroup);
 
 // Cập nhật bài viết
 router.put(
@@ -53,6 +54,9 @@ router.put(
   ]),
   postController.updatePost
 );
+
+router.get('/tags/:tag_id',authenticateToken,postController.getPostsByTag)
+
 
 module.exports = router;
 
@@ -197,7 +201,7 @@ module.exports = router;
 
 /**
  * @swagger
- * /api/post/{group_id}:
+ * /api/post/in_group/{group_id}:
  *   get:
  *     summary: Lấy bài viết trong một nhóm
  *     tags: [Post]
@@ -216,7 +220,27 @@ module.exports = router;
  *       500:
  *         description: Lỗi server
  */
-
+/**
+ * @swagger
+ * /api/post/tags/{tag_id}:
+ *   get:
+ *     summary: Lấy bài viết theo tag
+ *     tags: [Post]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: group_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID của nhóm
+ *     responses:
+ *       200:
+ *         description: Lấy bài viết thành công
+ *       500:
+ *         description: Lỗi server
+ */
 /**
  * @swagger
  * /api/post/{id}:
