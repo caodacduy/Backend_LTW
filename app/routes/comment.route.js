@@ -7,6 +7,7 @@ const commentController = require('../controllers/comment.controller')
 router.post("/",authenticateToken,commentController.createComment)
 router.get("/:post_id",authenticateToken,commentController.getCommentsByPost)
 router.delete("/:id",authenticateToken,commentController.deleteComment)
+router.patch('/:id',authenticateToken, commentController.updateComment);
 module.exports= router
 /**
  * @swagger

@@ -1,64 +1,19 @@
 const authenticateToken = require("../middlewares/auth.middleware");
-const express = require("express");
-const router = express.Router();
-const postController = require('../controllers/post.controller');
-const uploadImgController = require('../controllers/upload_img.controller');
-const upload = require('../middlewares/upload');
-const {verifyMembership} = require('../middlewares/member.middleware')
+const express=require("express")
+const router=express.Router();
+const postController= require('../controllers/post.controller')
 
-// Upload ảnh CKEditor
-router.post(
-  '/upload-image',
-  uploadImgController.upload.single('upload'),
-  uploadImgController.uploadImg
-);
+router.post('/',authenticateToken,postController.createPost)
+router.post('/:group_id',authenticateToken,postController.createPostInGroup)
+router.get('/public',authenticateToken,postController.getPost)
+router.get('/my_post',authenticateToken,postController.getPostById)
+router.get('/filter',authenticateToken, postController.filterPosts);
+router.get('/:group_id',authenticateToken,postController.getPostInGroup)
+router.put('/:id',authenticateToken,postController.updatePost)
+router.get('/detail/:id', authenticateToken, postController.getPostByIdDetail)
+router.delete('/:id', authenticateToken, postController.deletePost);
 
-// Tạo bài viết công khai (có upload ảnh và file)
-router.post(
-  '/',
-  authenticateToken,
-  upload.fields([
-    { name: 'image', maxCount: 1 },
-    { name: 'file', maxCount: 1 }
-  ]),
-  postController.createPost
-);
-
-// Tạo bài viết trong nhóm
-router.post(
-  '/:group_id',
-  authenticateToken,verifyMembership,
-  upload.fields([
-    { name: 'image', maxCount: 1 },
-    { name: 'file', maxCount: 1 }
-  ]),
-  postController.createPostInGroup
-);
-
-// Lấy bài viết công khai (không thuộc nhóm)
-router.get('/public', authenticateToken, postController.getPost);
-
-// Lấy bài viết của chính mình
-router.get('/my_post', authenticateToken, postController.getPostById);
-
-// Lấy bài viết trong một nhóm
-router.get('/in_group/:group_id', authenticateToken, postController.getPostInGroup);
-
-// Cập nhật bài viết
-router.put(
-  '/:id',
-  authenticateToken,
-  upload.fields([
-    { name: 'image', maxCount: 1 },
-    { name: 'file', maxCount: 1 }
-  ]),
-  postController.updatePost
-);
-
-router.get('/tags/:tag_id',authenticateToken,postController.getPostsByTag)
-
-
-module.exports = router;
+module.exports = router
 
 /**
  * @swagger

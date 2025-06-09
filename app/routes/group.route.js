@@ -1,17 +1,17 @@
-const express=require("express")
-const router=express.Router();
-const groupController=require("../controllers/group.controller");
-const checkRole=require('../middlewares/check.middleware')
+const express = require("express")
+const router = express.Router();
+const groupController = require("../controllers/group.controller");
+const checkRole = require('../middlewares/check.middleware')
 const authenticateToken = require('../middlewares/auth.middleware')
 
-
-router.post('/',checkRole.checkLecturer,groupController.createGroups)
-router.get('/',authenticateToken,groupController.getGroups)
+router.post('/', checkRole.checkLecturer, groupController.createGroups)
+router.get('/', authenticateToken, groupController.getGroups)
 router.get('/lecture', checkRole.checkLecturer, groupController.getGroupsWithLecture)
-router.delete('/:id',checkRole.checkLecturer,groupController.deleteGroup )
-router.put('/:id',checkRole.checkLecturer,groupController.updateGroup)
+router.get('/:id', groupController.getGroupById);
+router.delete('/:id', checkRole.checkLecturer, groupController.deleteGroup)
+router.put('/:id', checkRole.checkLecturer, groupController.updateGroup)
 
-module.exports=router
+module.exports = router
 /**
  * @swagger
  * /api/groups/:
