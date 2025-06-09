@@ -2,30 +2,30 @@
 require('dotenv').config();
 const express = require('express');
 const app = express();
-const routes =require('./app/routes/routes')
+const routes = require('./app/routes/routes')
 const cors = require('cors');
 require('./app/models/index')
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 //const
-const PORT=process.env.PORT
+const PORT = process.env.PORT
 
 app.use(cors());
 //use
 app.use(express.json())
-app.use('/',routes)
+app.use('/', routes)
 
-const options={
-  definition:{
-    openapi:"3.0.0",
-    info:{
-      title:"Test API",
-      version :"0.1",
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Test API",
+      version: "0.1",
     },
-    servers:[
+    servers: [
       {
-        url:"http://localhost:3000/",
+        url: "http://localhost:3000/",
       }
     ],
     components: {
@@ -38,13 +38,13 @@ const options={
       }
     }
   },
-  apis:["./app/routes/*.js"]
+  apis: ["./app/routes/*.js"]
 }
 
 const spacs = swaggerJsdoc(options)
-app.use("/api-docs",swaggerUi.serve,swaggerUi.setup(spacs))
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(spacs))
 
 
 app.listen(PORT, () => {
-  console.log('Server chạy tại http://localhost:3000');
+  console.log('Server chạy tại http://localhost:8000');
 });
