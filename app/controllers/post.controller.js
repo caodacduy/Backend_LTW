@@ -344,18 +344,32 @@ exports.deletePost = async (req, res) => {
   try {
     const { id } = req.params;
     const post = await Post.findByPk(id);
+
     if (!post) {
-      return res.status(404).json({ status: 'error', message: 'Bài viết không tồn tại' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Bài viết không tồn tại'
+      });
     }
 
-    if (post.user_id !== req.user.id) {
-      return res.status(403).json({ status: 'error', message: 'Bạn không có quyền xóa bài viết này' });
+    if (post.user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Bạn không có quyền xóa bài viết này'
+      });
     }
 
     await post.destroy();
-    return res.status(200).json({ status: 'success', message: 'Xóa bài viết thành công' });
+    return res.status(200).json({
+      status: 'success',
+      message: 'Xóa bài viết thành công'
+    });
+
   } catch (error) {
-    return res.status(500).json({ status: 'error', message: error.message || 'Lỗi khi xóa bài viết' });
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Lỗi khi xóa bài viết'
+    });
   }
 };
 
