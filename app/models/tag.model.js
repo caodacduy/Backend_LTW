@@ -21,7 +21,8 @@ module.exports = (sequelize, DataTypes) => {
       through: 'post_tags',
       foreignKey: 'tag_id',
       otherKey: 'post_id',
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
+      as: 'posts'
     });
   };
 

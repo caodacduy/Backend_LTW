@@ -30,32 +30,41 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: false
     },
-  image_url: {
-    type: DataTypes.STRING(255),
-    allowNull: true
-  },
-  file_url: {
-    type: DataTypes.STRING(255),
-    allowNull: true
-  },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
+    },
+    like_count: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    dislike_count: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
     }
   }, {
     tableName: 'posts',
     timestamps: false
   });
   Post.associate = (models) => {
-  Post.belongsTo(models.User, { foreignKey: 'user_id' });
-  Post.belongsTo(models.Group, { foreignKey: 'group_id' });
-  Post.belongsToMany(models.Tag, {
-  through: 'post_tags',
-  foreignKey: 'post_id',
-  otherKey: 'tag_id',
-  onDelete: 'CASCADE'
-});
+    Post.belongsTo(models.User, { foreignKey: 'user_id' });
+    Post.belongsTo(models.Group, { foreignKey: 'group_id' });
+    Post.hasMany(models.Comment, { foreignKey: 'post_id' });
+    Post.belongsToMany(models.Tag, {
+      through: 'post_tags',
+      foreignKey: 'post_id',
+      otherKey: 'tag_id',
+      onDelete: 'CASCADE',
+      as: 'tags'
+    });
+    Post.belongsToMany(models.Tag, {
+      through: 'post_tags',
+      foreignKey: 'post_id',
+      otherKey: 'tag_id',
+      onDelete: 'CASCADE',
+      as: 'filterTags'
+    });
 
-};
+  };
   return Post;
 };

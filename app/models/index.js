@@ -37,9 +37,7 @@ db.Post= require('./posts.model')(sequelize,Sequelize);
 db.Comment = require('./comment.model')(sequelize, Sequelize);
 db.Tag = require('./tag.model')(sequelize, Sequelize);
 db.PostTag = require('./post_tag.model')(sequelize, Sequelize);
-db.Vote = require('./vote.model')(sequelize,Sequelize);
-
-
+db.Like = require('./like.model')(sequelize, Sequelize);
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
