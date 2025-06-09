@@ -1,9 +1,9 @@
-const db=require('../models/index');
-const User =db.User;
-const {createUserService}=require('../services/user.service')
-const {generateToken}=require('../services/auth.service')
+const db = require('../models/index');
+const User = db.User;
+const { createUserService } = require('../services/user.service')
+const { generateToken } = require('../services/auth.service')
 const bcrypt = require('bcrypt');
-const saltRounds=10
+const saltRounds = 10
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -20,7 +20,6 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Mật khẩu không đúng' });
     }
 
-    // Tạo token
     const token = generateToken({
       id: user.id,
       name: user.name,
@@ -41,25 +40,22 @@ exports.login = async (req, res) => {
   }
 }
 
-
 exports.createUser = async (req, res) => {
   try {
     const { name, email, password_hash, role } = req.body;
     if (!name || !email || !password_hash) {
-        throw new Error('Thiếu dữ liệu bắt buộc');
-      }
-    if (password_hash.length<8) {
+      throw new Error('Thiếu dữ liệu bắt buộc');
+    }
+    if (password_hash.length < 8) {
       throw new Error('Mật khẩu phải dài hơn 8 chữ ')
     }
-      // Mã hóa mật khẩu
-      const hashedPassword = await bcrypt.hash(password_hash, saltRounds);
-      // Tạo user mới
-      const newUser = await User.create({
-        name,
-        email,
-        password_hash: hashedPassword,
-        role: role || 'student',
-      });
+    const hashedPassword = await bcrypt.hash(password_hash, saltRounds);
+    const newUser = await User.create({
+      name,
+      email,
+      password_hash: hashedPassword,
+      role: role || 'student',
+    });
     return res.status(201).json({
       status: 'success',
       data: newUser
@@ -72,13 +68,11 @@ exports.createUser = async (req, res) => {
   }
 };
 
-exports.getProfile = async (req,res)=>{
-    try {
-    // `req.user` đã có sẵn nhờ middleware verifyToken
+exports.getProfile = async (req, res) => {
+  try {
     const userId = req.user.id
-    // console.log(userId)
     const user = await User.findByPk(userId, {
-      attributes: [ 'email', 'name', 'role'] // Chỉ lấy các trường cần thiết
+      attributes: ['id', 'email', 'name', 'role', 'avt']
     });
 
     if (!user) {
@@ -86,8 +80,9 @@ exports.getProfile = async (req,res)=>{
     }
 
     return res.status(200).json({
-        status: 'success',
-        data: user });
+      status: 'success',
+      data: user
+    });
 
   } catch (error) {
     return res.status(500).json({

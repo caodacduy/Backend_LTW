@@ -1,58 +1,55 @@
+const { where, literal, Op } = require('sequelize');
 const db = require('../models/index');
 const Post = db.Post;
 const Tag = db.Tag;
+const User = db.User;
 
 exports.createPost = async (req, res) => {
   try {
     const userId = req.user.id;
-    let { title, content, tags } = req.body;
+    const { title, content, tags } = req.body;
 
     if (!title) {
       throw new Error('Thiếu dữ liệu bắt buộc');
     }
 
-    // Tách chuỗi tags thành mảng nếu tags là chuỗi
-    if (typeof tags === 'string') {
-      // Giả sử tags cách nhau bằng dấu cách, có thể thay đổi dấu phân cách nếu cần
-      tags = tags.trim().split(/\s+/); 
-    } else if (!Array.isArray(tags)) {
-      // Nếu không phải chuỗi hoặc mảng thì gán rỗng
-      tags = [];
-    }
-
-    // Lấy file từ req.files
-    const image = req.files && req.files['image'] ? req.files['image'][0] : null;
-    const file = req.files && req.files['file'] ? req.files['file'][0] : null;
-
-    const imageUrl = image ? `/uploads/image/${image.filename}` : null;
-    const fileUrl = file ? `/uploads/file/${file.filename}` : null;
-
     const newPost = await Post.create({
       title,
       content,
-      user_id: userId,
-      image_url: imageUrl,
-      file_url: fileUrl
+      user_id: userId
     });
 
-    if (tags.length > 0) {
+    if (Array.isArray(tags) && tags.length > 0) {
       const tagInstances = [];
       for (const tagName of tags) {
+        const normalizedTag = tagName.trim().toLowerCase().replace(/^#/, '');
         const [tag] = await Tag.findOrCreate({
-          where: { name: tagName.trim() }
+          where: { name: normalizedTag }
         });
         tagInstances.push(tag);
       }
+
       await newPost.addTags(tagInstances);
     }
 
-    const postWithTags = await Post.findByPk(newPost.id, {
-      include: [{ model: Tag, through: { attributes: [] } }]
+    const postWithTagsAndUser = await Post.findByPk(newPost.id, {
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'avt', 'role']
+        },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name'],
+          through: { attributes: [] }
+        }
+      ]
     });
 
     return res.status(201).json({
       status: 'success',
-      data: postWithTags
+      data: postWithTagsAndUser
     });
 
   } catch (error) {
@@ -63,18 +60,11 @@ exports.createPost = async (req, res) => {
   }
 };
 
-
 exports.createPostInGroup = async (req, res) => {
   try {
     const { group_id } = req.params;
     const userId = req.user.id;
-    let { title, content, tags } = req.body;
-
-    const image = req.files && req.files['image'] ? req.files['image'][0] : null;
-    const file = req.files && req.files['file'] ? req.files['file'][0] : null;
-
-    const imageUrl = image ? `/uploads/image/${image.filename}` : null;
-    const fileUrl = file ? `/uploads/file/${file.filename}` : null;
+    const { title, content, tags } = req.body;
 
     if (!title || !group_id) {
       throw new Error('Thiếu dữ liệu bắt buộc');
@@ -83,42 +73,38 @@ exports.createPostInGroup = async (req, res) => {
     const newPost = await Post.create({
       title,
       content,
-      group_id: group_id,
-      user_id: userId,
-      image_url: imageUrl,
-      file_url: fileUrl
+      group_id,
+      user_id: userId
     });
-    if (typeof tags === 'string') {
-      // Giả sử tags cách nhau bằng dấu cách, có thể thay đổi dấu phân cách nếu cần
-      tags = tags.trim().split(/\s+/); 
-    } else if (!Array.isArray(tags)) {
-      // Nếu không phải chuỗi hoặc mảng thì gán rỗng
-      tags = [];
-    }
+
     if (Array.isArray(tags) && tags.length > 0) {
       const tagInstances = [];
       for (const tagName of tags) {
+        const normalizedTag = tagName.trim().toLowerCase().replace(/^#/, '');
         const [tag] = await Tag.findOrCreate({
-          where: { name: tagName.trim() }
+          where: { name: normalizedTag }
         });
         tagInstances.push(tag);
       }
+
       await newPost.addTags(tagInstances);
     }
 
-    const postWithTags = await Post.findByPk(newPost.id, {
-      include: [{ model: Tag, through: { attributes: [] } }]
+    const postWithTagsAndUser = await Post.findByPk(newPost.id, {
+      include: [
+        { model: User, attributes: ['name', 'avt', 'role'] },
+        { model: Tag, as: 'tags', attributes: ['name'], through: { attributes: [] } }
+      ]
     });
 
     return res.status(201).json({
       status: 'success',
-      data: postWithTags
+      data: postWithTagsAndUser
     });
-
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi tạo bài viết trong nhóm'
+      message: error.message || 'Đã xảy ra lỗi khi tạo bài viết'
     });
   }
 };
@@ -127,9 +113,39 @@ exports.getPost = async (req, res) => {
   try {
     const allPosts = await Post.findAll({
       where: { group_id: null },
-      include: [{ model: Tag, through: { attributes: [] } }]
+      attributes: {
+        include: [
+          [
+            literal(`(
+              SELECT COUNT(*)
+              FROM comments AS comment
+              WHERE comment.post_id = Post.id
+            )`),
+            'comment_count'
+          ],
+          'like_count',
+          'dislike_count'
+        ]
+      },
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'avt', 'role']
+        },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name'],
+          through: { attributes: [] }
+        }
+      ],
+      order: [['created_at', 'DESC']]
     });
-    res.status(200).json({ status: 'success', data: allPosts });
+
+    res.status(200).json({
+      status: 'success',
+      data: allPosts
+    });
   } catch (error) {
     return res.status(500).json({
       status: 'error',
@@ -142,17 +158,48 @@ exports.getPostInGroup = async (req, res) => {
   const { group_id } = req.params;
   try {
     const allPosts = await Post.findAll({
-      where: { group_id: group_id },
-      include: [{ model: Tag, through: { attributes: [] } }]
-    });
-    res.status(200).json({ status: 'success', data: allPosts });
+      where: {
+        group_id: group_id
+      },
+      attributes: {
+        include: [
+          [
+            literal(`(
+              SELECT COUNT(*)
+              FROM comments AS comment
+              WHERE comment.post_id = Post.id
+            )`),
+            'comment_count'
+          ],
+          'like_count',
+          'dislike_count'
+        ]
+      },
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'avt', 'role']
+        },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name'],
+          through: { attributes: [] }
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    })
+    res.status(200).json({
+      status: 'success',
+      data: allPosts
+    })
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi lấy bài viết trong nhóm'
+      message: error.message || 'Đã xảy ra lỗi khi lấy bài viết'
     });
   }
-};
+}
 
 exports.getPostById = async (req, res) => {
   try {
@@ -161,14 +208,38 @@ exports.getPostById = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
-    const allPosts = await Post.findAll({
-      where: { user_id: user_id },
-      include: [{ model: Tag, through: { attributes: [] } }]
+    const { in_group } = req.query;
+
+    const whereCondition = {
+      user_id: user_id
+    };
+
+    if (in_group === 'true') {
+      whereCondition.group_id = { [Op.ne]: null };
+    } else if (in_group === 'false') {
+      whereCondition.group_id = null;
+    }
+
+    const posts = await Post.findAll({
+      where: whereCondition,
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'avt', 'role']
+        },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name'],
+          through: { attributes: [] }
+        }
+      ],
+      order: [['created_at', 'DESC']]
     });
 
     res.status(200).json({
       status: 'success',
-      data: allPosts,
+      data: posts,
       userid: user_id
     });
   } catch (error) {
@@ -179,86 +250,189 @@ exports.getPostById = async (req, res) => {
   }
 };
 
+exports.getPostByIdDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const post = await Post.findByPk(id, {
+      include: [
+        { model: User, attributes: ['name', 'avt', 'role'] },
+        { model: Tag, as: 'tags', attributes: ['name'], through: { attributes: [] } }
+      ]
+    });
+
+    if (!post) {
+      return res.status(404).json({ status: 'error', message: 'Bài viết không tồn tại' });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: post
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Lỗi khi lấy bài viết'
+    });
+  }
+};
+
 exports.updatePost = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
     const { id } = req.params;
 
-    const image = req.files && req.files['image'] ? req.files['image'][0] : null;
-    const file = req.files && req.files['file'] ? req.files['file'][0] : null;
-
-    const imageUrl = image ? `/uploads/image/${image.filename}` : null;
-    const fileUrl = file ? `/uploads/file/${file.filename}` : null;
+    if (!id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Thiếu ID bài viết cần cập nhật',
+      });
+    }
 
     const post = await Post.findByPk(id);
     if (!post) {
-      return res.status(404).json({ status: 'error', message: 'Bài viết không tồn tại' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Bài viết không tồn tại',
+      });
     }
 
-    await Post.update(
-      {
-        title,
-        content,
-        image_url: imageUrl || post.image_url,
-        file_url: fileUrl || post.file_url
-      },
-      { where: { id: id } }
-    );
+    if (post.user_id !== req.user.id) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Bạn không có quyền sửa bài viết này',
+      });
+    }
+
+    await post.update({ title, content });
 
     if (Array.isArray(tags)) {
       const tagInstances = [];
       for (const tagName of tags) {
+        const normalizedTag = tagName.trim().toLowerCase();
         const [tag] = await Tag.findOrCreate({
-          where: { name: tagName.trim() }
+          where: { name: normalizedTag },
         });
         tagInstances.push(tag);
       }
       await post.setTags(tagInstances);
     }
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Cập nhật bài viết thành công'
+    const updatedPost = await Post.findByPk(id, {
+      include: [{
+        model: Tag,
+        as: 'tags',
+        attributes: ['name'],
+        through: { attributes: [] },
+      }]
     });
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Cập nhật bài viết thành công',
+      data: updatedPost,
+    });
+
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi sửa bài viết'
+      message: error.message || 'Đã xảy ra lỗi khi sửa bài viết',
     });
   }
 };
 
-// Lấy các bài viết theo tag_id (có thể là 1 hoặc nhiều tag)
-exports.getPostsByTag = async (req, res) => {
-  const { tag_id } = req.params; // ví dụ: ?tag_id=13 hoặc ?tag_id=13,14
-
+exports.deletePost = async (req, res) => {
   try {
-    if (!tag_id) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Thiếu tag_id để lọc bài viết'
+    const { id } = req.params;
+    const post = await Post.findByPk(id);
+    if (!post) {
+      return res.status(404).json({ status: 'error', message: 'Bài viết không tồn tại' });
+    }
+
+    if (post.user_id !== req.user.id) {
+      return res.status(403).json({ status: 'error', message: 'Bạn không có quyền xóa bài viết này' });
+    }
+
+    await post.destroy();
+    return res.status(200).json({ status: 'success', message: 'Xóa bài viết thành công' });
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: error.message || 'Lỗi khi xóa bài viết' });
+  }
+};
+
+exports.filterPosts = async (req, res) => {
+  try {
+    const { q, tags, from_date, to_date, user_name } = req.query;
+    const sort = req.query.sort === 'asc' ? 'ASC' : 'DESC';
+
+    const whereClause = {};
+    if (q) {
+      whereClause[Op.or] = [
+        { title: { [Op.like]: `%${q}%` } },
+        { content: { [Op.like]: `%${q}%` } }
+      ];
+    }
+
+    if (from_date && to_date) {
+      whereClause.created_at = {
+        [Op.between]: [new Date(from_date), new Date(to_date)]
+      };
+    }
+
+    if (req.query.group_id) {
+      whereClause.group_id = req.query.group_id;
+    } else {
+      whereClause.group_id = null;
+    }
+
+    const include = [
+      {
+        model: User,
+        attributes: ['name', 'avt', 'role'],
+        ...(user_name ? { where: { name: { [Op.like]: `%${user_name}%` } } } : {})
+      },
+      {
+        model: Tag,
+        as: 'tags',
+        attributes: ['name'],
+        through: { attributes: [] }
+      }
+    ];
+
+    if (tags) {
+      const tagList = tags.split(',').map(t => t.trim().toLowerCase());
+      include.push({
+        model: Tag,
+        as: 'filterTags',
+        attributes: [],
+        through: { attributes: [] },
+        where: { name: { [Op.in]: tagList } }
       });
     }
 
-    const tagIds = tag_id.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-
     const posts = await Post.findAll({
-      include: [
-        {
-          model: Tag,
-          where: { id: tagIds },
-          through: { attributes: [] }
-        }
-      ],
-      distinct: true
+      where: whereClause,
+      include,
+      attributes: {
+        include: [
+          [literal(`(
+        SELECT COUNT(*)
+        FROM comments AS comment
+        WHERE comment.post_id = Post.id
+      )`), 'comment_count']
+        ]
+      },
+      distinct: true,
+      order: [['created_at', sort]]
     });
 
-    res.status(200).json({ status: 'success', data: posts });
+    return res.status(200).json({
+      status: 'success',
+      data: posts
+    });
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi lấy bài viết theo tag'
+      message: error.message || 'Lỗi khi lọc bài viết'
     });
   }
 };
-
