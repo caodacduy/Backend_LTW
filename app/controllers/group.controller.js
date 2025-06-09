@@ -125,35 +125,46 @@ exports.getGroupsWithLecture = async (req, res) => {
 };
 
 exports.deleteGroup = async (req, res) => {
-
   try {
     const id = req.params.id;
-    const deleted = await Group.destroy({ where: { id } });
+    const currentUserId = req.user.id;
 
-    if (!deleted) {
-      return res.status(404).json({ message: 'Không tìm thấy Group để xóa' });
+    const group = await Group.findByPk(id);
+    if (!group) {
+      return res.status(404).json({ message: 'Không tìm thấy nhóm để xóa' });
     }
+
+    if (group.owner_id !== currentUserId) {
+      return res.status(403).json({ message: 'Bạn không có quyền xóa nhóm này' });
+    }
+
+    await group.destroy();
 
     return res.status(200).json({
       status: 'success',
-      message: 'Xóa group thành công'
+      message: 'Xóa nhóm thành công'
     });
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi xóa Group'
+      message: error.message || 'Đã xảy ra lỗi khi xóa nhóm'
     });
   }
-}
+};
 
 exports.updateGroup = async (req, res) => {
   try {
     const id = req.params.id;
     const { name, description } = req.body;
+    const currentUserId = req.user.id;
 
     const group = await Group.findByPk(id);
     if (!group) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+      return res.status(404).json({ message: 'Không tìm thấy nhóm' });
+    }
+
+    if (group.owner_id !== currentUserId) {
+      return res.status(403).json({ message: 'Bạn không có quyền cập nhật nhóm này' });
     }
 
     await group.update({ name, description });
@@ -165,7 +176,7 @@ exports.updateGroup = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Đã xảy ra lỗi khi cập nhật người dùng'
+      message: error.message || 'Đã xảy ra lỗi khi cập nhật nhóm'
     });
   }
-}
+};
