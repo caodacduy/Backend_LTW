@@ -1,4 +1,5 @@
 const db = require('../models');
+const sendEmail = require('../../utils/sendEmail');
 const Comment = db.Comment;
 const Post = db.Post;
 const User = db.User;
@@ -29,6 +30,36 @@ exports.createComment = async (req, res) => {
       parent_id: parent_id || null,
       content
     });
+
+    if (parent_id) {
+      const parentComment = await Comment.findByPk(parent_id, {
+        include: [{ model: User, attributes: ['email', 'name'] }]
+      });
+
+      if (parentComment && parentComment.user_id !== user_id) {
+        const replyUser = await User.findByPk(user_id);
+        const emailContent = `
+      <p>Chào ${parentComment.User.name},</p>
+      <p><strong>${replyUser.name}</strong> vừa trả lời bình luận của bạn:</p>
+      <blockquote>${content}</blockquote>
+    `;
+        await sendEmail(parentComment.User.email, 'Bạn có phản hồi mới', emailContent);
+      }
+    }
+
+    if (!parent_id) {
+      const postAuthor = await User.findByPk(post.user_id);
+      const commenter = await User.findByPk(user_id);
+
+      if (postAuthor && postAuthor.email && postAuthor.id !== user_id) {
+        const emailContent = `
+      <p>Chào ${postAuthor.name},</p>
+      <p><strong>${commenter.name}</strong> vừa bình luận vào bài viết của bạn:</p>
+      <blockquote>${content}</blockquote>
+    `;
+        await sendEmail(postAuthor.email, 'Bình luận mới trên bài viết của bạn', emailContent);
+      }
+    }
 
     res.status(201).json({
       status: "success",
